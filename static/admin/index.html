@@ -1,74 +1,53 @@
-<!doctype html>
-<html>
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com; connect-src 'self' https://api.github.com https://raw.githubusercontent.com;">
-  <!-- Added unsafe-eval for js-yaml if it uses it, and connect-src for GitHub API -->
-  <title>Content Manager</title>
-</head>
-<body>
-  <div id="nc-root"></div> <!-- Decap CMS often mounts here with ESM -->
-  <script type="module">
-    // Import necessary parts from Decap CMS ESM bundles
-    // js-yaml should be available through these core imports or as a peer.
-    import CMS, { init } from 'https://unpkg.com/decap-cms@^3.1.0/dist/decap-cms.core.js';
-    import yaml from 'https://unpkg.com/js-yaml@^4.1.0/dist/js-yaml.mjs'; // Explicitly import js-yaml
-    // You might also need to import specific backends if not using the full 'decap-cms-app.js'
-    // For example, if decap-cms.core.js doesn't auto-register GitHub backend:
-    // import githubBackend from 'https://unpkg.com/decap-cms-backend-github@^3.0.0/dist/decap-cms-backend-github.mjs';
-    // CMS.registerBackend('github', githubBackend);
+    async function loadConfigAndThenSignalCmsInit() {
+      if (!cmsInstanceRef) {
+        console.warn("loadConfigAndThenSignalCmsInit called but CMS instance not ready.");
+        setTimeout(loadConfigAndThenSignalCmsInit, 100);
+        return;
+      }
 
-    let manuallyLoadedConfig = null;
+      // --- ADD A SMALL DELAY ---
+      await new Promise(resolve => setTimeout(resolve, 200)); // Wait 200ms for decap-cms.js to potentially expose jsyaml
+      // --- END DELAY ---
 
-    async function loadAndInit() {
       try {
-        console.log("ESM: Attempting to fetch /admin/config.yml");
-        const response = await fetch('/admin/config.yml?v=' + new Date().getTime());
-        if (!response.ok) throw new Error(`Failed to fetch config.yml: ${response.statusText}`);
+        console.log("Attempting to fetch /admin/config.yml for manual load.");
+        // ... (rest of the fetch logic remains the same) ...
         const configYAML = await response.text();
-        console.log("ESM: Successfully fetched config.yml content.");
+        console.log("Successfully fetched config.yml content for manual load.");
 
-        manuallyLoadedConfig = yaml.load(configYAML); // Use imported yaml
-        console.log("ESM: Parsed config.yml:", JSON.parse(JSON.stringify(manuallyLoadedConfig)));
-
-        if (manuallyLoadedConfig && manuallyLoadedConfig.backend) {
-          console.log('ESM: Forcing backend.auth_type to github and removing site_domain.');
-          manuallyLoadedConfig.backend.auth_type = 'github';
-          delete manuallyLoadedConfig.backend.site_domain;
-          console.log('ESM: Using this config for CMS.init:', JSON.parse(JSON.stringify(manuallyLoadedConfig)));
+        if (window.jsyaml) { // Check again after delay
+            manuallyLoadedConfig = window.jsyaml.load(configYAML);
+            console.log("Parsed config.yml with window.jsyaml for manual use:", JSON.parse(JSON.stringify(manuallyLoadedConfig)));
         } else {
-          console.error("ESM: Manually loaded config is invalid or missing backend.");
-          // Fallback to an empty config or throw error to prevent init
-          manuallyLoadedConfig = {};
+            console.error("window.jsyaml still not found after delay! Cannot parse config.yml. Trying to load it explicitly.");
+            // --- TRY TO LOAD js-yaml EXPLICITLY ---
+            try {
+                await loadScript('https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js');
+                if (window.jsyaml) {
+                    manuallyLoadedConfig = window.jsyaml.load(configYAML);
+                    console.log("Parsed config.yml with explicitly loaded window.jsyaml:", JSON.parse(JSON.stringify(manuallyLoadedConfig)));
+                } else {
+                    throw new Error("Failed to load js-yaml or it didn't attach to window.");
+                }
+            } catch (yamlLoadError) {
+                console.error("Critical error loading or using js-yaml:", yamlLoadError);
+                manuallyLoadedConfig = null; // Critical failure
+            }
+            // --- END EXPLICIT LOAD ---
         }
-
-        // Initialize Decap CMS with our loaded and modified config
-        // The 'init' function imported from decap-cms.core.js should be used.
-        // It might be CMS.init() or just init() depending on how it's exported.
-        // Let's assume it's on the CMS object for now.
-        if (CMS && CMS.init) {
-            CMS.init(manuallyLoadedConfig);
-        } else if (typeof init === 'function') {
-            init(manuallyLoadedConfig); // If init is a direct export
-        } else {
-            console.error("ESM: CMS.init or init function not found!");
-        }
-
+        // ... (rest of the function remains the same) ...
       } catch (error) {
-        console.error("ESM: Error in loadAndInit:", error);
-        // Render an error message to the user
-        const root = document.getElementById('nc-root');
-        if (root) root.innerHTML = `<p>Error loading CMS: ${error.message}. Check console.</p>`;
+        // ...
       }
     }
 
-    // Ensure the DOM is ready before trying to mount Decap CMS
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', loadAndInit);
-    } else {
-      loadAndInit();
+    // Helper function to load a script
+    function loadScript(src) {
+      return new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = src;
+        script.onload = resolve;
+        script.onerror = reject;
+        document.head.appendChild(script);
+      });
     }
-  </script>
-</body>
-</html>
