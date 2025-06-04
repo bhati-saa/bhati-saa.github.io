@@ -16,41 +16,38 @@
   <div id="nc-root"></div>
 
   <script type="module">
-    const log = (level, ...args) => console[level]('[ESM Decap]', ...args);
+    const log = (level, ...args) => console[level]('[ESM Decap App]', ...args); // Changed log prefix
 
     async function initDecap() {
       try {
-        log('info', 'Starting Decap CMS ESM initialization...');
-        log('info', 'Importing React, ReactDOM, PropTypes, and Emotion...');
+        log('info', 'Starting Decap CMS App initialization...');
+        log('info', 'Pre-loading React, ReactDOM, and PropTypes globally...');
 
-        // Explicitly import React, ReactDOM, PropTypes, and @emotion/react
-        const [React, ReactDOM, PropTypes, emotionReact] = await Promise.all([
+        // Pre-load React, ReactDOM, and PropTypes and set them globally
+        // This happens BEFORE decap-cms-app.js is imported and executed.
+        const [React, ReactDOM, PropTypes] = await Promise.all([
           import('https://unpkg.com/react@^17.0.2/umd/react.production.min.js'),
           import('https://unpkg.com/react-dom@^17.0.2/umd/react-dom.production.min.js'),
-          import('https://unpkg.com/prop-types@^15.8.1/prop-types.min.js'), // Using specific common version
-          import('https://unpkg.com/@emotion/react@^11.11.0/dist/emotion-react.umd.min.js') // Using specific common version for Emotion 11
+          import('https://unpkg.com/prop-types@^15.8.1/prop-types.min.js')
         ]);
         window.React = React;
         window.ReactDOM = ReactDOM;
         window.PropTypes = PropTypes;
-        // Emotion is usually used via React Context or specific imports,
-        // but having it loaded might resolve dependency issues.
-        // We log what's imported to see its structure.
-        log('info', 'React, ReactDOM, PropTypes imported globally.');
-        log('info', '@emotion/react module loaded. Available as "emotionReact" variable in this scope. Its structure:', emotionReact);
+        log('info', 'React, ReactDOM, and PropTypes pre-loaded and set globally.');
 
-
-        log('info', 'Importing Decap modules...');
-        // Using ^3 to get latest compatible 3.x versions
-        const [{ default: CMS }, { default: GitHubBackend }, { default: yaml }] = await Promise.all([
-          import('https://unpkg.com/decap-cms-core@^3/dist/decap-cms-core.js'),
-          import('https://unpkg.com/decap-cms-backend-github@^3/dist/decap-cms-backend-github.js'),
+        log('info', 'Importing Decap CMS App and js-yaml...');
+        // Import decap-cms-app (more bundled) and js-yaml
+        const [{ default: CMS }, { default: yaml }] = await Promise.all([
+          import('https://unpkg.com/decap-cms-app@^3/dist/decap-cms-app.js'), // Using decap-cms-app
           import('https://unpkg.com/js-yaml@^4/dist/js-yaml.mjs')
         ]);
-        log('info', 'Decap modules (core, github-backend, js-yaml) imported successfully.');
+        log('info', 'Decap CMS App and js-yaml imported successfully.');
 
-        CMS.registerBackend('github', GitHubBackend);
-        log('info', 'GitHub backend registered.');
+        // With decap-cms-app, registering common backends like GitHub might not be necessary
+        // as it often includes them. If GitHub backend is not found later, we can add:
+        // const { default: GitHubBackend } = await import('https://unpkg.com/decap-cms-backend-github@^3/dist/decap-cms-backend-github.js');
+        // CMS.registerBackend('github', GitHubBackend);
+        // For now, let's assume 'app' handles it.
 
         log('info', 'Fetching /admin/config.yml...');
         const configResponse = await fetch('/admin/config.yml?v=' + new Date().getTime());
@@ -88,17 +85,17 @@
             CMS.init(config);
             log('info', 'CMS.init(config) has been called.');
         } else {
-            throw new Error("CMS.init function not found after importing decap-cms-core.");
+            throw new Error("CMS.init function not found after importing decap-cms-app.");
         }
 
       } catch (error) {
-        log('error', 'Error during Decap CMS ESM initialization:', error);
+        log('error', 'Error during Decap CMS App initialization:', error);
         const root = document.getElementById('nc-root');
         if (root) {
           root.innerHTML = `<div style="padding: 20px; color: red; font-family: sans-serif;">
                               <h2>Decap CMS Initialization Error</h2>
                               <p><strong>Details:</strong> ${error.message}</p>
-                              <p>Please open the browser console (F12) for more technical details and check if all files (like config.yml) are loading correctly in the Network tab.</p>
+                              <p>Please open the browser console (F12) for more technical details.</p>
                             </div>`;
         }
       }
