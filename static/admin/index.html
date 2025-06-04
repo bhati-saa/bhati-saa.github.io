@@ -1,53 +1,167 @@
-    async function loadConfigAndThenSignalCmsInit() {
-      if (!cmsInstanceRef) {
-        console.warn("loadConfigAndThenSignalCmsInit called but CMS instance not ready.");
-        setTimeout(loadConfigAndThenSignalCmsInit, 100);
-        return;
-      }
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Content Manager</title>
 
-      // --- ADD A SMALL DELAY ---
-      await new Promise(resolve => setTimeout(resolve, 200)); // Wait 200ms for decap-cms.js to potentially expose jsyaml
-      // --- END DELAY ---
-
-      try {
-        console.log("Attempting to fetch /admin/config.yml for manual load.");
-        // ... (rest of the fetch logic remains the same) ...
-        const configYAML = await response.text();
-        console.log("Successfully fetched config.yml content for manual load.");
-
-        if (window.jsyaml) { // Check again after delay
-            manuallyLoadedConfig = window.jsyaml.load(configYAML);
-            console.log("Parsed config.yml with window.jsyaml for manual use:", JSON.parse(JSON.stringify(manuallyLoadedConfig)));
-        } else {
-            console.error("window.jsyaml still not found after delay! Cannot parse config.yml. Trying to load it explicitly.");
-            // --- TRY TO LOAD js-yaml EXPLICITLY ---
-            try {
-                await loadScript('https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js');
-                if (window.jsyaml) {
-                    manuallyLoadedConfig = window.jsyaml.load(configYAML);
-                    console.log("Parsed config.yml with explicitly loaded window.jsyaml:", JSON.parse(JSON.stringify(manuallyLoadedConfig)));
-                } else {
-                    throw new Error("Failed to load js-yaml or it didn't attach to window.");
-                }
-            } catch (yamlLoadError) {
-                console.error("Critical error loading or using js-yaml:", yamlLoadError);
-                manuallyLoadedConfig = null; // Critical failure
-            }
-            // --- END EXPLICIT LOAD ---
-        }
-        // ... (rest of the function remains the same) ...
-      } catch (error) {
-        // ...
-      }
-    }
+  <!-- SCRIPT 1: Interceptor and Manual Init -->
+  <script>
+    let cmsObjectObserved = false;
+    let actualCMSInit = null;
+    let cmsInstanceRef = null;
+    let manuallyLoadedConfig = null; // To store our fetched and parsed config
 
     // Helper function to load a script
     function loadScript(src) {
       return new Promise((resolve, reject) => {
+        console.log(`Attempting to load script: ${src}`);
         const script = document.createElement('script');
         script.src = src;
-        script.onload = resolve;
-        script.onerror = reject;
+        script.async = true; // Ensure async loading
+        script.onload = () => {
+          console.log(`Successfully loaded script: ${src}`);
+          resolve();
+        };
+        script.onerror = () => {
+          console.error(`Failed to load script: ${src}`);
+          reject(new Error(`Failed to load script: ${src}`));
+        };
         document.head.appendChild(script);
       });
     }
+
+    // Try to intercept the CMS object
+    if (typeof window.CMS === 'undefined') {
+      Object.defineProperty(window, 'CMS', {
+        configurable: true,
+        enumerable: true,
+        get() { return this._CMS; },
+        set(cmsInstance) {
+          this._CMS = cmsInstance;
+          cmsInstanceRef = cmsInstance; // Store reference
+          if (cmsInstance && cmsInstance.init && !cmsObjectObserved) {
+            cmsObjectObserved = true;
+            console.log('CMS object intercepted via setter:', cmsInstance);
+            actualCMSInit = cmsInstance.init; // Store original init
+            cmsInstance.init = function(config) { // Patched init
+              console.log('[INTERCEPTED VIA SETTER] CMS.init CALLED. Config received by Decap:', JSON.parse(JSON.stringify(config || {})));
+
+              let configToUse = manuallyLoadedConfig; // Prioritize our manually loaded config
+
+              if (!configToUse && config && Object.keys(config).length > 0) {
+                console.log("Using config provided by Decap's init call as manual load failed or was empty.");
+                configToUse = config;
+              } else if (!configToUse) {
+                console.error("Manually loaded config is null/empty, and Decap provided an empty config. Problems likely.");
+                configToUse = {};
+              }
+
+              // --- FORCE CONFIG ---
+              if (configToUse && typeof configToUse.backend !== 'undefined') { // Check if backend might be null vs undefined
+                 console.log('Forcing backend.auth_type to github and removing site_domain in configToUse.');
+                 if (!configToUse.backend) configToUse.backend = {}; // Ensure backend object exists
+                 configToUse.backend.auth_type = 'github'; // Force it
+                 delete configToUse.backend.site_domain;   // Remove it
+                 // delete configToUse.backend.base_url;    // Optional: Remove if you want to ensure GitHub API default
+                 console.log('[INTERCEPTED VIA SETTER] CMS.init - Modified config before use:', JSON.parse(JSON.stringify(configToUse)));
+              } else if (configToUse) {
+                console.warn("configToUse does not have a backend property or it's null. This is likely an issue.", JSON.parse(JSON.stringify(configToUse)));
+                 // Attempt to create a minimal backend config if it's missing entirely
+                 if (!configToUse.backend) {
+                    console.log("Backend property missing in configToUse, attempting to create a minimal one.");
+                    configToUse.backend = {
+                        name: 'github', // Default to github if completely missing
+                        auth_type: 'github'
+                        // Add repo and branch if you know them and they are missing
+                        // repo: 'YOUR_USERNAME/YOUR_REPO',
+                        // branch: 'main'
+                    };
+                    // You MUST ensure your repo and branch are in your actual /admin/config.yml
+                    // This is just a fallback for the JS forcing.
+                 }
+              } else {
+                console.error("configToUse is undefined or null before calling actualCMSInit.");
+              }
+              // --- END FORCE CONFIG ---
+
+              console.log('[INTERCEPTED VIA SETTER] CMS.init - Calling original init with FINAL config:', JSON.parse(JSON.stringify(configToUse || {})));
+              return actualCMSInit.call(this, configToUse); // Call original with OUR config
+            };
+            // Now that CMS object is available and init is patched, load our config
+            loadConfigAndPrepareForCmsInit();
+          }
+        }
+      });
+    }
+
+    async function loadConfigAndPrepareForCmsInit() {
+      if (!cmsInstanceRef) {
+        console.warn("loadConfigAndPrepareForCmsInit called but CMS instance not ready.");
+        setTimeout(loadConfigAndPrepareForCmsInit, 150); // Slightly increased delay for retry
+        return;
+      }
+
+      // Give decap-cms.js a moment to potentially expose jsyaml
+      console.log("Waiting a moment for decap-cms.js to potentially expose js-yaml...");
+      await new Promise(resolve => setTimeout(resolve, 300)); // Increased delay
+
+      try {
+        console.log("Attempting to fetch /admin/config.yml for manual load.");
+        const response = await fetch('/admin/config.yml?v=' + new Date().getTime()); // Cache bust
+        if (!response.ok) {
+          throw new Error(`Failed to fetch config.yml: ${response.statusText}`);
+        }
+        const configYAML = await response.text();
+        console.log("Successfully fetched config.yml content for manual load.");
+
+        if (window.jsyaml) {
+            manuallyLoadedConfig = window.jsyaml.load(configYAML);
+            console.log("Parsed config.yml with window.jsyaml for manual use:", JSON.parse(JSON.stringify(manuallyLoadedConfig)));
+        } else {
+            console.warn("window.jsyaml not found after delay! Attempting to load it explicitly.");
+            try {
+                await loadScript('https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js');
+                if (window.jsyaml) { // Check again after loading
+                    manuallyLoadedConfig = window.jsyaml.load(configYAML);
+                    console.log("Parsed config.yml with explicitly loaded window.jsyaml:", JSON.parse(JSON.stringify(manuallyLoadedConfig)));
+                } else {
+                    throw new Error("Failed to make js-yaml available on window object after explicit load.");
+                }
+            } catch (yamlLoadError) {
+                console.error("Critical error loading or using js-yaml:", yamlLoadError);
+                manuallyLoadedConfig = null; // Indicate critical failure
+            }
+        }
+
+        console.log("Manual config loaded (or load attempted). Waiting for Decap's auto-init to call our patched version.");
+        // We expect Decap's auto-init to call our patched cmsInstanceRef.init,
+        // which will then use `manuallyLoadedConfig`.
+
+      } catch (error) {
+        console.error("Error in loadConfigAndPrepareForCmsInit:", error);
+        manuallyLoadedConfig = null;
+      }
+    }
+
+    // Fallback just to log
+    document.addEventListener('DOMContentLoaded', () => {
+      if (cmsInstanceRef && actualCMSInit) {
+        console.log("DOMContentLoaded: CMS object was intercepted, init was patched. Manual config load process should have been triggered from setter.");
+      } else if (window.CMS) {
+        console.warn("DOMContentLoaded: window.CMS exists, but interception logic might have issues or ran too late to patch init effectively before an auto-call.");
+      } else {
+        console.log("DOMContentLoaded: CMS object not yet available via fallback.");
+      }
+    });
+
+  </script>
+
+  <!-- SCRIPT 2: Load Decap CMS -->
+  <script defer src="https://unpkg.com/decap-cms@^3.1.0/dist/decap-cms.js?v=debug6"></script>
+  <!-- Cache buster incremented -->
+
+</head>
+<body>
+</body>
+</html>
