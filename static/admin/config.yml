@@ -2,8 +2,8 @@ backend:
   name: github
   repo: bhati-saa/bhati-saa.github.io
   branch: main # Or your default branch (e.g., master)
-  auth_type: implicit # Can be useful if you have issues with the default GitHub auth flow
-  # site_domain: your_username.github.io # Usually not needed for basic GitHub auth
+  auth_type: github # Can be useful if you have issues with the default GitHub auth flow
+  # site_domain: bhati-saa.github.io # Usually not needed for basic GitHub auth
 
 # This is used for the media library if you want to upload images via Decap CMS
 media_folder: "static/media/uploads" # Path where uploaded files will be stored (relative to repo root)
