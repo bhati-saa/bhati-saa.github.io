@@ -4,8 +4,58 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Content Manager</title>
-<script defer src="https://unpkg.com/decap-cms@3.1.0/dist/decap-cms.js?v=test1"></script>
+  <script defer src="https://unpkg.com/decap-cms@^3.1.0/dist/decap-cms.js?v=debug2"></script>
+  <!-- Changed version slightly and added new cache buster -->
 </head>
 <body>
+  <script>
+    // Wait for the CMS object to be available
+    function attemptCMSDebug() {
+      if (window.CMS) {
+        console.log("CMS object found:", window.CMS);
+
+        // Attempt to override or inspect the backend configuration before init
+        // This is a bit of a hack and might not work depending on Decap's internal timing
+
+        // Store original init
+        const originalInit = window.CMS.init;
+        window.CMS.init = function(config) {
+          console.log("CMS.init called. Initial config:", JSON.parse(JSON.stringify(config || {})));
+
+          // You could try to force parts of the config here if needed,
+          // but Decap should be reading from /admin/config.yml
+          // Example:
+          // if (config && config.backend && config.backend.name === 'github') {
+          //   console.log('Forcing auth_type to github if not present or overriding');
+          //   config.backend.auth_type = 'github';
+          //   delete config.backend.site_domain; // Ensure no site_domain
+          // }
+
+          // You can try to inspect the authenticator creation
+          // This is highly internal and might break between versions
+          if (window.CMS && window.CMS.getBackend) {
+            const backendInstance = window.CMS.getBackend('github'); // Assuming 'github' is your backend name
+            if (backendInstance && backendInstance.currentUser) {
+               // This is just an example of trying to access internal parts
+               // The actual auth URL generation is deeper
+            }
+          }
+
+          return originalInit.call(this, config);
+        };
+
+        // Forcibly initialize if it hasn't already.
+        // Decap usually auto-initializes when it finds config.yml
+        // window.CMS.init(); // Might not be needed if auto-init works
+
+      } else {
+        console.log("CMS object not yet available, retrying...");
+        setTimeout(attemptCMSDebug, 100); // Retry after 100ms
+      }
+    }
+    // Start the attempt after the main Decap script has had a chance to load
+    window.addEventListener('load', attemptCMSDebug);
+
+  </script>
 </body>
 </html>
