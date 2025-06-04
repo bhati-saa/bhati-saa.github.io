@@ -4,58 +4,83 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Content Manager</title>
-  <script defer src="https://unpkg.com/decap-cms@^3.1.0/dist/decap-cms.js?v=debug2"></script>
-  <!-- Changed version slightly and added new cache buster -->
-</head>
-<body>
+
+  <!-- SCRIPT 1: Interceptor for CMS.init -->
   <script>
-    // Wait for the CMS object to be available
-    function attemptCMSDebug() {
-      if (window.CMS) {
-        console.log("CMS object found:", window.CMS);
+    // This script runs BEFORE decap-cms.js is loaded and executed
+    // We're trying to prepare for when the CMS object might be created.
+    // This is a bit fragile as it depends on Decap's internal structure.
 
-        // Attempt to override or inspect the backend configuration before init
-        // This is a bit of a hack and might not work depending on Decap's internal timing
+    let cmsObjectObserved = false;
+    let actualCMSInit = null;
 
-        // Store original init
-        const originalInit = window.CMS.init;
-        window.CMS.init = function(config) {
-          console.log("CMS.init called. Initial config:", JSON.parse(JSON.stringify(config || {})));
-
-          // You could try to force parts of the config here if needed,
-          // but Decap should be reading from /admin/config.yml
-          // Example:
-          // if (config && config.backend && config.backend.name === 'github') {
-          //   console.log('Forcing auth_type to github if not present or overriding');
-          //   config.backend.auth_type = 'github';
-          //   delete config.backend.site_domain; // Ensure no site_domain
-          // }
-
-          // You can try to inspect the authenticator creation
-          // This is highly internal and might break between versions
-          if (window.CMS && window.CMS.getBackend) {
-            const backendInstance = window.CMS.getBackend('github'); // Assuming 'github' is your backend name
-            if (backendInstance && backendInstance.currentUser) {
-               // This is just an example of trying to access internal parts
-               // The actual auth URL generation is deeper
-            }
+    // Try to intercept the CMS object as soon as it's created or its properties are set.
+    // This is a more advanced technique.
+    if (typeof window.CMS === 'undefined') {
+      Object.defineProperty(window, 'CMS', {
+        configurable: true,
+        enumerable: true,
+        get() {
+          return this._CMS;
+        },
+        set(cmsInstance) {
+          this._CMS = cmsInstance;
+          if (cmsInstance && cmsInstance.init && !cmsObjectObserved) {
+            cmsObjectObserved = true;
+            console.log('CMS object intercepted via setter:', cmsInstance);
+            actualCMSInit = cmsInstance.init;
+            cmsInstance.init = function(config) {
+              console.log('[INTERCEPTED VIA SETTER] CMS.init called. Initial config:', JSON.parse(JSON.stringify(config || {})));
+              // You can try to force parts of the config here:
+              // if (config && config.backend) {
+              //   config.backend.auth_type = 'github';
+              //   delete config.backend.site_domain;
+              //   delete config.backend.base_url; // Or ensure it's https://api.github.com
+              //   console.log('[INTERCEPTED VIA SETTER] Modified config:', JSON.parse(JSON.stringify(config)));
+              // }
+              return actualCMSInit.call(this, config);
+            };
           }
+        }
+      });
+    }
 
-          return originalInit.call(this, config);
+    // Fallback if the Object.defineProperty doesn't catch it in time for .init
+    function attemptCMSDebugFallback() {
+      if (window.CMS && window.CMS.init && !actualCMSInit) { // Check if not already patched
+        console.log("CMS object found (fallback):", window.CMS);
+        actualCMSInit = window.CMS.init;
+        window.CMS.init = function(config) {
+          console.log('[FALLBACK INTERCEPT] CMS.init called. Initial config:', JSON.parse(JSON.stringify(config || {})));
+          // if (config && config.backend) {
+          //   config.backend.auth_type = 'github';
+          //   delete config.backend.site_domain;
+          //   console.log('[FALLBACK INTERCEPT] Modified config:', JSON.parse(JSON.stringify(config)));
+          // }
+          return actualCMSInit.call(this, config);
         };
-
-        // Forcibly initialize if it hasn't already.
-        // Decap usually auto-initializes when it finds config.yml
-        // window.CMS.init(); // Might not be needed if auto-init works
-
-      } else {
-        console.log("CMS object not yet available, retrying...");
-        setTimeout(attemptCMSDebug, 100); // Retry after 100ms
+        // If Decap CMS auto-initializes, we might have missed the original call.
+        // But if it waits for DOMContentLoaded or similar, we might catch it.
+      } else if (window.CMS && window.CMS.init && actualCMSInit) {
+        console.log("CMS.init already patched.");
+      }
+      else {
+        console.log("CMS object or CMS.init not yet available (fallback), retrying...");
+        setTimeout(attemptCMSDebugFallback, 50); // Retry faster
       }
     }
-    // Start the attempt after the main Decap script has had a chance to load
-    window.addEventListener('load', attemptCMSDebug);
+    // Try the fallback mechanism slightly after the main script might load
+    // Use DOMContentLoaded which fires earlier than 'load'
+    document.addEventListener('DOMContentLoaded', attemptCMSDebugFallback);
 
   </script>
+
+  <!-- SCRIPT 2: Load Decap CMS -->
+  <script defer src="https://unpkg.com/decap-cms@^3.1.0/dist/decap-cms.js?v=debug3"></script>
+  <!-- Cache buster incremented -->
+
+</head>
+<body>
+  <!-- No extra scripts in body needed for this -->
 </body>
 </html>
