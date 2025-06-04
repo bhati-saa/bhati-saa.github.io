@@ -16,15 +16,13 @@
   <div id="nc-root"></div>
 
   <script type="module">
-    const log = (level, ...args) => console[level]('[ESM Decap App]', ...args); // Changed log prefix
+    const log = (level, ...args) => console[level]('[ESM Decap App]', ...args);
 
     async function initDecap() {
       try {
         log('info', 'Starting Decap CMS App initialization...');
         log('info', 'Pre-loading React, ReactDOM, and PropTypes globally...');
 
-        // Pre-load React, ReactDOM, and PropTypes and set them globally
-        // This happens BEFORE decap-cms-app.js is imported and executed.
         const [React, ReactDOM, PropTypes] = await Promise.all([
           import('https://unpkg.com/react@^17.0.2/umd/react.production.min.js'),
           import('https://unpkg.com/react-dom@^17.0.2/umd/react-dom.production.min.js'),
@@ -34,20 +32,24 @@
         window.ReactDOM = ReactDOM;
         window.PropTypes = PropTypes;
         log('info', 'React, ReactDOM, and PropTypes pre-loaded and set globally.');
+        // --- ADD THESE LOGS ---
+        log('info', 'Inspecting window.React directly after import:', window.React);
+        if (window.React) {
+          log('info', 'typeof window.React.createContext:', typeof window.React.createContext);
+          log('info', 'Is window.React.createContext a function?', typeof window.React.createContext === 'function');
+        } else {
+          log('error', 'window.React is undefined after import!');
+        }
+        // --- END ADDED LOGS ---
+
 
         log('info', 'Importing Decap CMS App and js-yaml...');
-        // Import decap-cms-app (more bundled) and js-yaml
         const [{ default: CMS }, { default: yaml }] = await Promise.all([
-          import('https://unpkg.com/decap-cms-app@^3/dist/decap-cms-app.js'), // Using decap-cms-app
+          import('https://unpkg.com/decap-cms-app@^3/dist/decap-cms-app.js'),
           import('https://unpkg.com/js-yaml@^4/dist/js-yaml.mjs')
         ]);
         log('info', 'Decap CMS App and js-yaml imported successfully.');
 
-        // With decap-cms-app, registering common backends like GitHub might not be necessary
-        // as it often includes them. If GitHub backend is not found later, we can add:
-        // const { default: GitHubBackend } = await import('https://unpkg.com/decap-cms-backend-github@^3/dist/decap-cms-backend-github.js');
-        // CMS.registerBackend('github', GitHubBackend);
-        // For now, let's assume 'app' handles it.
 
         log('info', 'Fetching /admin/config.yml...');
         const configResponse = await fetch('/admin/config.yml?v=' + new Date().getTime());
