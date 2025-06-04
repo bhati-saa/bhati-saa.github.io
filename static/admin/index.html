@@ -21,26 +21,41 @@
     async function initDecap() {
       try {
         log('info', 'Starting Decap CMS App initialization...');
-        log('info', 'Pre-loading React, ReactDOM, and PropTypes globally...');
+        log('info', 'Pre-loading React, ReactDOM, and PropTypes globally via dynamic import()...');
 
-        const [React, ReactDOM, PropTypes] = await Promise.all([
+        const [ReactModule, ReactDOMModule, PropTypesModule] = await Promise.all([
           import('https://unpkg.com/react@^17.0.2/umd/react.production.min.js'),
           import('https://unpkg.com/react-dom@^17.0.2/umd/react-dom.production.min.js'),
           import('https://unpkg.com/prop-types@^15.8.1/prop-types.min.js')
         ]);
-        window.React = React;
-        window.ReactDOM = ReactDOM;
-        window.PropTypes = PropTypes;
-        log('info', 'React, ReactDOM, and PropTypes pre-loaded and set globally.');
-        // --- ADD THESE LOGS ---
-        log('info', 'Inspecting window.React directly after import:', window.React);
-        if (window.React) {
-          log('info', 'typeof window.React.createContext:', typeof window.React.createContext);
-          log('info', 'Is window.React.createContext a function?', typeof window.React.createContext === 'function');
+
+        // Assign the 'default' export from the UMD module to the window object.
+        // Also include a fallback to window.React in case the UMD already set it, or to the module itself.
+        window.React = ReactModule.default || window.React || ReactModule;
+        window.ReactDOM = ReactDOMModule.default || window.ReactDOM || ReactDOMModule;
+        window.PropTypes = PropTypesModule.default || window.PropTypes || PropTypesModule;
+
+        log('info', 'React, ReactDOM, and PropTypes should now be globally available.');
+        log('info', 'Checking window.React:', window.React);
+        if (window.React && typeof window.React.createContext === 'function') {
+          log('info', 'SUCCESS: window.React.createContext is a function.');
         } else {
-          log('error', 'window.React is undefined after import!');
+          log('error', 'FAILURE: window.React.createContext is NOT a function or window.React is wrong.');
+          log('info', 'typeof window.React:', typeof window.React);
+          if (window.React) {
+            log('info', 'Keys in window.React (first few):', Object.keys(window.React).slice(0, 10)); // Log some keys to inspect
+            log('info', 'typeof window.React.createContext:', typeof window.React.createContext);
+          }
+          // Early exit if React is not set up correctly, as Decap will fail.
+          throw new Error("React (or React.createContext) was not loaded correctly onto the window object.");
         }
-        // --- END ADDED LOGS ---
+        // Check PropTypes as well, as it's a Decap dependency
+        if (window.PropTypes) {
+            log('info', 'SUCCESS: window.PropTypes is available.');
+        } else {
+            log('warn', 'FAILURE: window.PropTypes is not available.');
+            // Depending on Decap's strictness, this might be an issue or just for certain widgets.
+        }
 
 
         log('info', 'Importing Decap CMS App and js-yaml...');
@@ -52,40 +67,41 @@
 
 
         log('info', 'Fetching /admin/config.yml...');
-        const configResponse = await fetch('/admin/config.yml?v=' + new Date().getTime());
+        const configResponse = await fetch('/admin/config.yml?v=' + new Date().getTime()); // Cache-busting
         if (!configResponse.ok) {
           throw new Error(`Failed to fetch config.yml: ${configResponse.statusText} (status: ${configResponse.status})`);
         }
         const configYAML = await configResponse.text();
         log('info', 'Successfully fetched config.yml.');
 
-        const config = yaml.load(configYAML);
-        log('info', 'Parsed config.yml:', JSON.parse(JSON.stringify(config)));
+        const loadedConfig = yaml.load(configYAML); // Renamed to avoid confusion with the 'config' key for init
+        log('info', 'Parsed config.yml:', JSON.parse(JSON.stringify(loadedConfig)));
 
-        if (!config.backend) {
+        if (!loadedConfig.backend) {
           log('warn', 'Backend section missing in config.yml. Creating minimal GitHub backend config.');
-          config.backend = {};
+          loadedConfig.backend = {};
         }
         log('info', 'Forcing backend settings for direct GitHub auth in the loaded config.');
-        config.backend.name = 'github';
-        config.backend.auth_type = 'github';
-        delete config.backend.site_domain;
+        loadedConfig.backend.name = 'github';
+        loadedConfig.backend.auth_type = 'github';
+        delete loadedConfig.backend.site_domain; // Ensure no conflicting Netlify Identity/Git Gateway settings remain
 
-        if (!config.backend.repo || !config.backend.branch) {
+        if (!loadedConfig.backend.repo || !loadedConfig.backend.branch) {
           log('error', 'CRITICAL FAILURE: `backend.repo` or `backend.branch` is missing in your loaded config.yml.');
           const rootEl = document.getElementById('nc-root');
           if (rootEl) {
             rootEl.innerHTML = `<div style="padding: 20px; color: red;"><h2>Configuration Error</h2><p>The <code>backend.repo</code> or <code>backend.branch</code> is missing in your <code>/admin/config.yml</code>. Please correct this and try again.</p></div>`;
           }
-          return;
+          return; // Stop execution
         }
-        log('info', `Using backend repo: ${config.backend.repo}, branch: ${config.backend.branch}`);
+        log('info', `Using backend repo: ${loadedConfig.backend.repo}, branch: ${loadedConfig.backend.branch}`);
 
-        log('info', 'Final config object being passed to CMS.init:', JSON.parse(JSON.stringify(config)));
+        log('info', 'Final config object being passed to CMS.init:', JSON.parse(JSON.stringify(loadedConfig)));
 
         if (CMS && typeof CMS.init === 'function') {
-            CMS.init(config);
-            log('info', 'CMS.init(config) has been called.');
+            // IMPORTANT: Pass the config object under the 'config' key
+            CMS.init({ config: loadedConfig });
+            log('info', 'CMS.init({ config: loadedConfig }) has been called.');
         } else {
             throw new Error("CMS.init function not found after importing decap-cms-app.");
         }
