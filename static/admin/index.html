@@ -21,14 +21,17 @@
     async function initDecap() {
       try {
         log('info', 'Starting Decap CMS ESM initialization...');
-        log('info', 'Importing React and ReactDOM...');
-        const [React, ReactDOM] = await Promise.all([
+        log('info', 'Importing React, ReactDOM, and PropTypes...'); // Updated log
+        // Explicitly import React, ReactDOM, and PropTypes
+        const [React, ReactDOM, PropTypes] = await Promise.all([
           import('https://unpkg.com/react@^17/umd/react.production.min.js'),
-          import('https://unpkg.com/react-dom@^17/umd/react-dom.production.min.js')
+          import('https://unpkg.com/react-dom@^17/umd/react-dom.production.min.js'),
+          import('https://unpkg.com/prop-types@^15/prop-types.min.js') // Added PropTypes import
         ]);
         window.React = React;
         window.ReactDOM = ReactDOM;
-        log('info', 'React and ReactDOM imported and set globally.');
+        window.PropTypes = PropTypes; // Make PropTypes global
+        log('info', 'React, ReactDOM, and PropTypes imported and set globally.'); // Updated log
 
         log('info', 'Importing Decap modules...');
         // Using ^3 to get latest compatible 3.x versions, hoping standard dist paths exist
