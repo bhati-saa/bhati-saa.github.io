@@ -4,211 +4,104 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Content Manager</title>
-
-  <!-- SCRIPT 1: Interceptor and Manual Init -->
-  <script>
-    // Global flags and references
-    let cmsObjectObserved = false;
-    let actualCMSInit = null; // Stores the original CMS.init
-    let cmsInstanceRef = null;  // Stores the CMS instance
-    let manuallyLoadedConfigGlobal = null; // Stores our parsed config.yml
-    let mainPatchedInitHasBeenCalled = false; // Flag to prevent multiple calls
-
-    // Helper function to load external scripts
-    function loadScript(src) {
-      return new Promise((resolve, reject) => {
-        console.log(`Attempting to load script: ${src}`);
-        const script = document.createElement('script');
-        script.src = src;
-        script.async = true;
-        script.onload = () => {
-          console.log(`Successfully loaded script: ${src}`);
-          resolve();
-        };
-        script.onerror = () => {
-          console.error(`Failed to load script: ${src}`);
-          reject(new Error(`Failed to load script: ${src}`));
-        };
-        document.head.appendChild(script);
-      });
-    }
-
-    // Intercept the CMS object when it's set on the window
-    if (typeof window.CMS === 'undefined') {
-      Object.defineProperty(window, 'CMS', {
-        configurable: true,
-        enumerable: true,
-        get() { return this._CMS; },
-        set(cmsInstance) {
-          this._CMS = cmsInstance;
-          cmsInstanceRef = cmsInstance; // Store the CMS instance reference
-
-          // Patch CMS.init only once when the CMS object is first observed
-          if (cmsInstance && cmsInstance.init && !cmsObjectObserved) {
-            cmsObjectObserved = true;
-            console.log('CMS object intercepted via setter:', cmsInstance);
-            actualCMSInit = cmsInstance.init; // Store the original CMS.init function
-
-            // THIS IS OUR MAIN PATCHED CMS.init FUNCTION
-            cmsInstance.init = function(configFromCaller) {
-              if (mainPatchedInitHasBeenCalled) {
-                console.warn("[MAIN PATCHED INIT] Already called once. Ignoring subsequent call to prevent issues.");
-                return;
-              }
-              mainPatchedInitHasBeenCalled = true; // Set flag
-
-              console.log('[MAIN PATCHED INIT] CALLED. Config received from caller (Decap or manual):', JSON.parse(JSON.stringify(configFromCaller || {})));
-
-              let configToUse;
-
-              // Prioritize our globally stored, manually loaded config.yml
-              if (manuallyLoadedConfigGlobal && Object.keys(manuallyLoadedConfigGlobal).length > 0) {
-                console.log("[MAIN PATCHED INIT] Prioritizing `manuallyLoadedConfigGlobal`.");
-                configToUse = JSON.parse(JSON.stringify(manuallyLoadedConfigGlobal)); // Use a deep copy
-              } else if (configFromCaller && Object.keys(configFromCaller).length > 0) {
-                // If global config is not available, but the caller provided one (e.g., Decap's default empty {} )
-                console.warn("[MAIN PATCHED INIT] `manuallyLoadedConfigGlobal` is empty/null. Using config received from Decap's call (if any).");
-                configToUse = configFromCaller;
-              } else {
-                // Both are empty/null - this is a critical failure state.
-                console.error("[MAIN PATCHED INIT] CRITICAL: Both `manuallyLoadedConfigGlobal` and Decap's provided config are empty/null. Config.yml likely failed to load/parse.");
-                configToUse = {}; // Fallback to empty; Decap will likely show an error UI
-              }
-
-              // --- FORCE GITHUB BACKEND DETAILS ON configToUse ---
-              // This section ensures the backend is configured for direct GitHub auth.
-              if (!configToUse.backend) {
-                console.warn("[MAIN PATCHED INIT] `configToUse.backend` is missing. Creating minimal GitHub backend config.");
-                configToUse.backend = {}; // Create backend object if it doesn't exist
-              }
-
-              console.log('[MAIN PATCHED INIT] Forcing backend settings for direct GitHub auth.');
-              configToUse.backend.name = 'github';      // Ensure name is 'github'
-              configToUse.backend.auth_type = 'github'; // Ensure auth_type is 'github'
-              delete configToUse.backend.site_domain;   // Remove any Netlify-specific site_domain
-
-              // Ensure repo and branch are present (these should come from your /admin/config.yml via manuallyLoadedConfigGlobal)
-              if (manuallyLoadedConfigGlobal && manuallyLoadedConfigGlobal.backend) {
-                if (manuallyLoadedConfigGlobal.backend.repo) {
-                  configToUse.backend.repo = manuallyLoadedConfigGlobal.backend.repo;
-                }
-                if (manuallyLoadedConfigGlobal.backend.branch) {
-                  configToUse.backend.branch = manuallyLoadedConfigGlobal.backend.branch;
-                }
-              }
-
-              if (!configToUse.backend.repo || !configToUse.backend.branch) {
-                console.error("[MAIN PATCHED INIT] CRITICAL: `configToUse.backend.repo` or `configToUse.backend.branch` is missing. These MUST be defined in your /admin/config.yml file.");
-              }
-              // --- END FORCE GITHUB BACKEND DETAILS ---
-
-              console.log('[MAIN PATCHED INIT] Calling original actualCMSInit with FINAL config:', JSON.parse(JSON.stringify(configToUse)));
-              return actualCMSInit.call(this, configToUse); // Call the original CMS.init with our processed config
-            };
-
-            // After patching, proceed to load our config and then trigger CMS initialization.
-            loadConfigAndThenAttemptInit();
-          }
-        }
-      });
-    }
-
-    // Asynchronously loads config.yml, parses it, and then attempts to initialize Decap CMS.
-    async function loadConfigAndThenAttemptInit() {
-      if (!cmsInstanceRef) {
-        console.warn("loadConfigAndThenAttemptInit: CMS instance not ready yet. Retrying shortly...");
-        setTimeout(loadConfigAndThenAttemptInit, 150);
-        return;
-      }
-
-      console.log("loadConfigAndThenAttemptInit: Waiting a moment for decap-cms.js to potentially expose js-yaml...");
-      await new Promise(resolve => setTimeout(resolve, 300)); // Delay for js-yaml
-
-      try {
-        console.log("loadConfigAndThenAttemptInit: Attempting to fetch /admin/config.yml.");
-        const response = await fetch('/admin/config.yml?v=' + new Date().getTime()); // Cache-bust fetch
-        if (!response.ok) {
-          throw new Error(`Failed to fetch config.yml: ${response.statusText}`);
-        }
-        const configYAML = await response.text();
-        console.log("loadConfigAndThenAttemptInit: Successfully fetched config.yml.");
-
-        // Attempt to parse YAML
-        if (window.jsyaml) {
-          manuallyLoadedConfigGlobal = window.jsyaml.load(configYAML);
-          console.log("loadConfigAndThenAttemptInit: Parsed config.yml into `manuallyLoadedConfigGlobal` using window.jsyaml:", JSON.parse(JSON.stringify(manuallyLoadedConfigGlobal)));
-        } else {
-          console.warn("loadConfigAndThenAttemptInit: window.jsyaml not found. Attempting to load it explicitly.");
-          await loadScript('https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js');
-          if (window.jsyaml) {
-            manuallyLoadedConfigGlobal = window.jsyaml.load(configYAML);
-            console.log("loadConfigAndThenAttemptInit: Parsed config.yml into `manuallyLoadedConfigGlobal` using explicitly loaded js-yaml:", JSON.parse(JSON.stringify(manuallyLoadedConfigGlobal)));
-          } else {
-            throw new Error("loadConfigAndThenAttemptInit: Failed to make js-yaml available after explicit load.");
-          }
-        }
-      } catch (error) {
-        console.error("loadConfigAndThenAttemptInit: Error fetching or parsing config.yml:", error);
-        manuallyLoadedConfigGlobal = null; // Ensure it's null on error
-      }
-
-      // --- Manual Init Call Logic ---
-      // This section decides whether to manually call our patched CMS.init
-      // if Decap CMS's auto-initializer doesn't do it quickly enough.
-      console.log("loadConfigAndThenAttemptInit: Local config processing complete. `manuallyLoadedConfigGlobal` is set (or null on error).");
-      console.log("loadConfigAndThenAttemptInit: Current `manuallyLoadedConfigGlobal` value:", manuallyLoadedConfigGlobal ? JSON.parse(JSON.stringify(manuallyLoadedConfigGlobal)) : null);
-
-      let decapAutoInitCalledOurMainPatch = false;
-      const originalMainPatchedInitForDetection = cmsInstanceRef.init; // This is our main patched init
-
-      // Temporarily re-patch to detect if Decap calls our main patch via its auto-init
-      cmsInstanceRef.init = function(configFromAutoInit) {
-          decapAutoInitCalledOurMainPatch = true;
-          console.log("[TEMP RE-PATCH DETECTOR] Decap's auto-init is calling our main_patched_init.");
-          // It's crucial to call the *actual* main patched init here, not the original one.
-          return originalMainPatchedInitForDetection.call(this, configFromAutoInit);
-      };
-
-      console.log("loadConfigAndThenAttemptInit: Waiting a moment (500ms) for Decap's auto-init to trigger...");
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      // Restore our main patch to cmsInstanceRef.init
-      cmsInstanceRef.init = originalMainPatchedInitForDetection;
-
-      if (!decapAutoInitCalledOurMainPatch) {
-          console.warn("loadConfigAndThenAttemptInit: Decap's auto-init did NOT call our main_patched_init within the timeout. Attempting to call it manually NOW.");
-          if (manuallyLoadedConfigGlobal && Object.keys(manuallyLoadedConfigGlobal).length > 0) {
-              console.log("loadConfigAndThenAttemptInit: Manually calling main_patched_init with our fully parsed `manuallyLoadedConfigGlobal`.");
-              // Call our main patched init (which is now back on cmsInstanceRef.init)
-              cmsInstanceRef.init(manuallyLoadedConfigGlobal);
-          } else {
-              console.error("loadConfigAndThenAttemptInit: Cannot manually call init because `manuallyLoadedConfigGlobal` is null or empty. Calling with empty config to observe Decap's behavior.");
-              cmsInstanceRef.init({}); // Call with empty; our main patch will handle forcing backend.
-          }
-      } else {
-          console.log("loadConfigAndThenAttemptInit: Decap's auto-init DID call our main_patched_init. No further manual call by us was needed.");
-      }
-      // --- END Manual Init Call Logic ---
-    }
-
-    // Fallback logging for DOMContentLoaded
-    document.addEventListener('DOMContentLoaded', () => {
-      if (cmsInstanceRef && actualCMSInit) {
-        console.log("DOMContentLoaded: CMS object was intercepted, and its init method was patched. The config loading and init triggering process should have been initiated from the setter.");
-      } else if (window.CMS) {
-        console.warn("DOMContentLoaded: window.CMS exists, but our interception/patching logic might have encountered an issue or ran too late.");
-      } else {
-        console.log("DOMContentLoaded: CMS object not yet available via this fallback listener.");
-      }
-    });
-  </script>
-
-  <!-- SCRIPT 2: Load Decap CMS -->
-  <script defer src="https://unpkg.com/decap-cms@^3.0.7/dist/decap-cms.js?v=debug10"></script>
-  <!-- Cache buster incremented again -->
-
+  <!--
+    Content Security Policy:
+    Adjust as needed. This is a basic policy.
+    'unsafe-eval' might be needed by some parts of Decap or its dependencies (like js-yaml in some modes).
+    'unsafe-inline' for inline styles if Decap/React uses them.
+    unpkg.com for loading modules.
+    api.github.com and raw.githubusercontent.com for GitHub backend.
+    your-github-pages-domain.github.io for self.
+  -->
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self';
+                 script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com;
+                 style-src 'self' 'unsafe-inline';
+                 img-src 'self' data: https://*;
+                 connect-src 'self' https://api.github.com https://raw.githubusercontent.com;
+                 font-src 'self' https://unpkg.com;">
 </head>
 <body>
-<div id="nc-root"></div>
+  <div id="nc-root"></div> <!-- Decap CMS will mount here -->
+
+  <script type="module">
+    // Log function for consistent output
+    const log = (level, ...args) => console[level]('[ESM Decap]', ...args);
+
+    async function initDecap() {
+      try {
+        log('info', 'Starting Decap CMS ESM initialization...');
+
+        // Import core Decap CMS, GitHub backend, and js-yaml
+        log('info', 'Importing modules...');
+        const [{ default: CMS }, { default: GitHubBackend }, { default: yaml }] = await Promise.all([
+          import('https://unpkg.com/decap-cms-core@^3.1.3/dist/decap-cms-core.js'), // Or latest stable 3.x
+          import('https://unpkg.com/decap-cms-backend-github@^3.0.4/dist/decap-cms-backend-github.js'), // Or latest stable 3.x
+          import('https://unpkg.com/js-yaml@^4.1.0/dist/js-yaml.mjs')
+        ]);
+        log('info', 'Modules imported successfully.');
+
+        // Register the GitHub backend
+        CMS.registerBackend('github', GitHubBackend);
+        log('info', 'GitHub backend registered.');
+
+        // Fetch and parse config.yml
+        log('info', 'Fetching /admin/config.yml...');
+        const response = await fetch('/admin/config.yml?v=' + new Date().getTime()); // Cache bust
+        if (!response.ok) {
+          throw new Error(`Failed to fetch config.yml: ${response.statusText} (status: ${response.status})`);
+        }
+        const configYAML = await response.text();
+        log('info', 'Successfully fetched config.yml.');
+
+        const config = yaml.load(configYAML);
+        log('info', 'Parsed config.yml:', JSON.parse(JSON.stringify(config)));
+
+        // --- Ensure backend is correctly configured for GitHub ---
+        if (!config.backend) {
+          log('warn', 'Backend section missing in config.yml. Creating minimal GitHub backend.');
+          config.backend = {};
+        }
+        log('info', 'Forcing backend settings for direct GitHub auth.');
+        config.backend.name = 'github';
+        config.backend.auth_type = 'github'; // Explicitly set for clarity
+        delete config.backend.site_domain;   // Remove any Netlify-specific settings
+
+        // Crucially, repo and branch must be in your config.yml
+        if (!config.backend.repo || !config.backend.branch) {
+          log('error', 'CRITICAL: backend.repo or backend.branch is missing in your config.yml. Decap CMS will fail.');
+          // You might want to throw an error here or display it to the user.
+          // For now, logging error and letting it proceed to see Decap's behavior.
+        }
+        // --- End backend forcing ---
+
+        log('info', 'Final config object being passed to CMS.init:', JSON.parse(JSON.stringify(config)));
+
+        // Initialize Decap CMS with the configuration
+        CMS.init(config);
+        log('info', 'CMS.init(config) has been called.');
+
+      } catch (error) {
+        log('error', 'Error during Decap CMS ESM initialization:', error);
+        const root = document.getElementById('nc-root');
+        if (root) {
+          root.innerHTML = `<div style="padding: 20px; color: red;">
+                              <h2>Decap CMS Initialization Error</h2>
+                              <p>There was an error setting up the Content Management System.</p>
+                              <p><strong>Error:</strong> ${error.message}</p>
+                              <p>Please check the browser console for more details.</p>
+                            </div>`;
+        }
+      }
+    }
+
+    // Run the initialization
+    // Ensure DOM is ready, though with type="module" scripts are deferred by default.
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initDecap);
+    } else {
+      initDecap();
+    }
+  </script>
 </body>
 </html>
