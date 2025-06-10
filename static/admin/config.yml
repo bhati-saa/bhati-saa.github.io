@@ -1,0 +1,80 @@
+# Backend: How Decap CMS connects to your content.
+backend:
+  name: github
+  repo: bhati-saa/bhati-saa.github.io # IMPORTANT: Change this to your-github-username/your-repo-name
+  branch: main # Or master, depending on your default branch name
+
+# Where to store the media files (images, PDFs) that you upload.
+media_folder: "assets/media/"
+public_folder: "/media/"
+
+# The heart of the configuration: defining your content types.
+collections:
+  # Homepage sections (the "widgets" you mentioned)
+  - name: "home"
+    label: "Homepage"
+    files:
+      - file: "content/home/about.md"
+        label: "About Me (Biography)"
+        name: "about"
+        widget: "object"
+        fields:
+          - {label: "Title", name: "title", widget: "string"}
+          - {label: "Body", name: "body", widget: "markdown"}
+      - file: "content/home/experience.md"
+        label: "Experience"
+        name: "experience"
+        widget: "object"
+        fields:
+          - {label: "Title", name: "title", widget: "string"}
+          - {label: "Subtitle", name: "subtitle", widget: "string", required: false}
+          - {label: "Body", name: "body", widget: "markdown"} # You edit your experience items in the markdown here
+      - file: "content/home/accomplishments.md"
+        label: "Accomplishments"
+        name: "accomplishments"
+        widget: "object"
+        fields:
+          - {label: "Title", name: "title", widget: "string"}
+          - {label: "Body", name: "body", widget: "markdown"}
+      # Add other homepage files like skills.md, posts.md, etc. as needed
+
+  # Blog Posts
+  - name: "post"
+    label: "Posts"
+    folder: "content/post/"
+    create: true
+    slug: "{{year}}-{{month}}-{{day}}-{{slug}}"
+    fields:
+      - {label: "Title", name: "title", widget: "string"}
+      - {label: "Publish Date", name: "date", widget: "datetime"}
+      - {label: "Summary", name: "summary", widget: "text"}
+      - {label: "Image", name: "image", widget: "image", required: false}
+      - {label: "Tags", name: "tags", widget: "list", required: false}
+      - {label: "Body", name: "body", widget: "markdown"}
+
+  # Publications
+  - name: "publication"
+    label: "Publications"
+    folder: "content/publication/"
+    create: true
+    fields:
+      - {label: "Title", name: "title", widget: "string"}
+      - {label: "Authors", name: "authors", widget: "list"}
+      - {label: "Date", name: "date", widget: "datetime"}
+      - {label: "Publication", name: "publication", widget: "string"}
+      - {label: "Publication Short", name: "publication_short", widget: "string"}
+      - {label: "Abstract", name: "abstract", widget: "markdown"}
+      - {label: "URL to PDF", name: "url_pdf", widget: "string", required: false}
+      - {label: "URL to Code", name: "url_code", widget: "string", required: false}
+
+  # Other settings, like the main site parameters
+  - name: "settings"
+    label: "Settings"
+    files:
+      - file: "config/_default/params.yaml"
+        label: "Site Parameters"
+        name: "params"
+        fields:
+          - {label: "Theme", name: "theme", widget: "string"}
+          - {label: "Font", name: "font", widget: "string", required: false}
+          # Add other parameters from this file you want to edit

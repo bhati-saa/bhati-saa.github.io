@@ -3,77 +3,9 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="robots" content="noindex" />
   <title>Content Manager</title>
-
-  <!-- This flag MUST run before the main script to prevent auto-initialization -->
-  <script>
-    window.CMS_MANUAL_INIT = true;
-  </script>
+  <script src="https://unpkg.com/decap-cms@^3.0.0/dist/decap-cms.js"></script>
 </head>
 <body>
-  <!-- 
-    Load an explicit, modern version of Decap CMS. 
-    This is the key to bypassing old cached versions that point to netlify.com 
-  -->
-  <script src="https://cdn.jsdelivr.net/npm/decap-cms@3.1.2/dist/decap-cms.js"></script>
-
-  <!-- Now, manually initialize the CMS with our embedded configuration -->
-  <script>
-    CMS.init({
-      config: {
-        backend: {
-          name: 'github',
-          repo: 'Bhati-saa/Bhati-saa.github.io',
-          branch: 'main',
-        },
-        media_folder: 'assets/media',
-        public_folder: '/media',
-        collections: [
-          {
-            name: 'home',
-            label: 'Homepage Sections',
-            files: [
-              {
-                label: 'About Me (Biography)',
-                name: 'about',
-                file: 'content/home/about.md',
-                fields: [
-                  { label: 'Section Order (Weight)', name: 'weight', widget: 'number' },
-                  { label: 'Title', name: 'title', widget: 'string' },
-                  { label: 'Body', name: 'body', widget: 'markdown' },
-                ],
-              },
-              {
-                label: 'Experience',
-                name: 'experience',
-                file: 'content/home/experience.md',
-                fields: [
-                  { label: 'Section Order (Weight)', name: 'weight', widget: 'number' },
-                  { label: 'Title', name: 'title', widget: 'string' },
-                  { label: 'Subtitle', name: 'subtitle', widget: 'string', required: false },
-                  { label: 'Body', name: 'body', widget: 'markdown' },
-                ],
-              },
-              // Add other homepage sections like accomplishments.md if you need them
-            ],
-          },
-          {
-            name: 'post',
-            label: 'Posts',
-            folder: 'content/post/',
-            create: true,
-            slug: '{{year}}-{{month}}-{{day}}-{{slug}}',
-            fields: [
-              { label: 'Title', name: 'title', widget: 'string' },
-              { label: 'Publish Date', name: 'date', widget: 'datetime' },
-              { label: 'Summary', name: 'summary', widget: 'text' },
-              { label: 'Body', name: 'body', widget: 'markdown' },
-            ],
-          },
-        ],
-      },
-    });
-  </script>
 </body>
 </html>
