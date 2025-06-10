@@ -5,27 +5,28 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="robots" content="noindex" />
   <title>Content Manager</title>
+
+  <!-- 1. This script MUST run BEFORE the main Decap CMS script. -->
+  <!-- It tells the CMS to wait for our manual configuration. -->
+  <script>
+    window.CMS_MANUAL_INIT = true;
+  </script>
 </head>
 <body>
-  <!-- 1. The Decap CMS script is loaded FIRST. This creates the 'CMS' object. -->
+  <!-- 2. Now we load the main Decap CMS script. It will see the flag and NOT auto-initialize. -->
   <script src="https://cdn.jsdelivr.net/npm/decap-cms@^3.0.0/dist/decap-cms.js"></script>
 
-  <!-- 2. The CMS is initialized SECOND, using the 'CMS' object that now exists. -->
+  <!-- 3. Finally, we provide our configuration and initialize the CMS ourselves. -->
   <script>
     CMS.init({
       config: {
-        // Use the GitHub backend
         backend: {
           name: 'github',
-          repo: 'Bhati-saa/Bhati-saa.github.io', // Your repo
-          branch: 'main', // Your branch
+          repo: 'Bhati-saa/Bhati-saa.github.io',
+          branch: 'main',
         },
-        
-        // Where to store media files
         media_folder: 'assets/media',
         public_folder: '/media',
-        
-        // The content collections
         collections: [
           {
             name: 'home',
@@ -36,7 +37,7 @@
                 name: 'about',
                 file: 'content/home/about.md',
                 fields: [
-                  { label: 'Section Order (Weight)', name: 'weight', widget: 'number', default: 10 },
+                  { label: 'Section Order (Weight)', name: 'weight', widget: 'number' },
                   { label: 'Title', name: 'title', widget: 'string' },
                   { label: 'Body', name: 'body', widget: 'markdown' },
                 ],
@@ -46,7 +47,7 @@
                 name: 'experience',
                 file: 'content/home/experience.md',
                 fields: [
-                  { label: 'Section Order (Weight)', name: 'weight', widget: 'number', default: 20 },
+                  { label: 'Section Order (Weight)', name: 'weight', widget: 'number' },
                   { label: 'Title', name: 'title', widget: 'string' },
                   { label: 'Subtitle', name: 'subtitle', widget: 'string', required: false },
                   { label: 'Body', name: 'body', widget: 'markdown' },
@@ -57,7 +58,7 @@
                 name: 'accomplishments',
                 file: 'content/home/accomplishments.md',
                 fields: [
-                  { label: 'Section Order (Weight)', name: 'weight', widget: 'number', default: 30 },
+                  { label: 'Section Order (Weight)', name: 'weight', widget: 'number' },
                   { label: 'Title', name: 'title', widget: 'string' },
                   { label: 'Body', name: 'body', widget: 'markdown' },
                 ],
