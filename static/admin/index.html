@@ -5,9 +5,84 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="robots" content="noindex" />
   <title>Content Manager</title>
+  <!-- Using a different CDN (jsDelivr) to be absolutely sure we bypass any cache -->
+  <script src="https://cdn.jsdelivr.net/npm/decap-cms@^3.0.0/dist/decap-cms.js"></script>
 </head>
 <body>
-  <!-- Include the script that builds the page and powers Decap CMS -->
-  <script src="https://unpkg.com/decap-cms@^3.0.0/dist/decap-cms.js?v=1"></script>
+  <script>
+    CMS.init({
+      config: {
+        // Use the GitHub backend
+        backend: {
+          name: 'github',
+          repo: 'Bhati-saa/Bhati-saa.github.io', // Your repo
+          branch: 'main', // Your branch
+        },
+        
+        // Where to store media files
+        media_folder: 'assets/media',
+        public_folder: '/media',
+        
+        // The content collections
+        collections: [
+          {
+            name: 'home',
+            label: 'Homepage Sections',
+            files: [
+              {
+                label: 'About Me (Biography)',
+                name: 'about',
+                file: 'content/home/about.md',
+                widget: 'object',
+                fields: [
+                  { label: 'Section Order (Weight)', name: 'weight', widget: 'number', default: 10 },
+                  { label: 'Title', name: 'title', widget: 'string' },
+                  { label: 'Body', name: 'body', widget: 'markdown' },
+                ],
+              },
+              {
+                label: 'Experience',
+                name: 'experience',
+                file: 'content/home/experience.md',
+                widget: 'object',
+                fields: [
+                  { label: 'Section Order (Weight)', name: 'weight', widget: 'number', default: 20 },
+                  { label: 'Title', name: 'title', widget: 'string' },
+                  { label: 'Subtitle', name: 'subtitle', widget: 'string', required: false },
+                  { label: 'Body', name: 'body', widget: 'markdown' },
+                ],
+              },
+              {
+                label: 'Accomplishments',
+                name: 'accomplishments',
+                file: 'content/home/accomplishments.md',
+                widget: 'object',
+                fields: [
+                  { label: 'Section Order (Weight)', name: 'weight', widget: 'number', default: 30 },
+                  { label: 'Title', name: 'title', widget: 'string' },
+                  { label: 'Body', name: 'body', widget: 'markdown' },
+                ],
+              },
+            ],
+          },
+          {
+            name: 'post',
+            label: 'Posts',
+            folder: 'content/post/',
+            create: true,
+            slug: '{{year}}-{{month}}-{{day}}-{{slug}}',
+            fields: [
+              { label: 'Title', name: 'title', widget: 'string' },
+              { label: 'Publish Date', name: 'date', widget: 'datetime' },
+              { label: 'Summary', name: 'summary', widget: 'text' },
+              { label: 'Image', name: 'image', widget: 'image', required: false },
+              { label: 'Tags', name: 'tags', widget: 'list', required: false },
+              { label: 'Body', name: 'body', widget: 'markdown' },
+            ],
+          },
+        ],
+      },
+    });
+  </script>
 </body>
 </html>
