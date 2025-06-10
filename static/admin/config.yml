@@ -1,7 +1,7 @@
 # Backend: How Decap CMS connects to your content.
 backend:
   name: github
-  repo: Bhati-saa/Bhati-saa.github.io # IMPORTANT: Change this to your-github-username/your-repo-name
+  repo: bhati-saa/bhati-saa.github.io # IMPORTANT: Change this to your-github-username/your-repo-name
   branch: main # Or master, depending on your default branch name
 
 # Where to store the media files (images, PDFs) that you upload.
