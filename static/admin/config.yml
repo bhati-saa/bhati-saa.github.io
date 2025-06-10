@@ -3,7 +3,7 @@ backend:
   name: github
   repo: bhati-saa/bhati-saa.github.io # IMPORTANT: Change this to your-github-username/your-repo-name
   branch: main # Or master, depending on your default branch name
-
+  auth_endpoint: decap-cms-github
 # Where to store the media files (images, PDFs) that you upload.
 media_folder: "assets/media/"
 public_folder: "/media/"
