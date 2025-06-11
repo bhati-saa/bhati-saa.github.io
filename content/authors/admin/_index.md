@@ -71,7 +71,6 @@ education:
       text: 'Read Thesis [Stay Tuned]'
       #url: 'https://example.com'
   - area: Integrated BS-MS | Mathematics Major 
-Thesis title: .
     institution: Indian Institute of Science Education and Research (IISER), Pune, India
     date_start: 2014-08-01
     date_end: 2019-06-01
