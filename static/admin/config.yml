@@ -9,7 +9,7 @@ public_folder: "/media/"
 
 # The collections that define the editable content of your site.
 collections:
-  # COLLECTION 1: Your main author profile. This is the most important section.
+  # COLLECTION 1: Your main author profile.
   - name: "profile"
     label: "My Profile"
     files:
@@ -29,12 +29,12 @@ collections:
               - name: "courses"
                 label: "Degrees & Courses"
                 widget: "list"
-                required: false # This allows the list to be empty
+                required: false
                 fields:
                   - {label: "Course / Degree", name: "course", widget: "string", required: false}
                   - {label: "Institution", name: "institution", widget: "string", required: false}
                   - {label: "Year", name: "year", widget: "number", required: false}
-          - {label: "Social Media & Other Links", name: "social", widget: "list", required: false, fields: [{label: Icon, name: icon, widget: string, hint: "E.g., 'envelope', 'twitter', 'github'. See Font Awesome docs."}, {label: Icon Pack, name: "icon_pack", widget: "string", hint: "E.g., 'fas', 'fab'"}, {label: Link, name: link, widget: string}]}
+          - {label: "Social Media & Other Links", name: "social", widget: "list", required: false, fields: [{label: Icon, name: icon, widget: string, hint: "E.g., 'envelope', 'twitter', 'github'."}, {label: Icon Pack, name: "icon_pack", widget: "string", hint: "E.g., 'fas', 'fab'"}, {label: Link, name: link, widget: string}]}
           - {label: "Email for Contact Form", name: "email", widget: "string", required: false}
           - {label: "Main Biography Content", name: "body", widget: "markdown", hint: "This is the main text that appears in your 'About Me' section."}
 
@@ -48,7 +48,7 @@ collections:
         fields:
           - {label: "Enable this section?", name: "active", widget: "boolean", default: true}
           - {label: "Order (Weight)", name: "weight", widget: "number", default: 10, hint: "Lower numbers appear higher on the page."}
-          - {label: "Title", name: "title", widget: "string", required: false, hint: "Leave blank to use default. This section displays your main profile."}
+          - {label: "Title", name: "title", widget: "string", required: false, hint: "Leave blank to use default. Displays your main profile."}
       - file: "content/home/skills.md"
         label: "Skills"
         name: "home_skills"
@@ -86,44 +86,41 @@ collections:
         label: "Contact"
         name: "home_contact"
         fields:
-          - {label: "Enable this section?", name: "active", widget: "boolean", default: true}
+          - {label: "Enable this- section?", name: "active", widget: "boolean", default: true}
           - {label: "Order (Weight)", name: "weight", widget: "number", default: 60}
           - {label: "Title", name: "title", widget: "string", default: "Contact"}
           - {label: "Body (Content)", name: "body", widget: "markdown"}
 
-  # COLLECTION 3: Content types you can create new entries for.
-  - name: "content_types"
-    label: "Content"
-    collapsed: false
-    collections:
-      - name: "posts"
-        label: "Blog Posts"
-        folder: "content/post/"
-        create: true
-        slug: "{{year}}-{{month}}-{{day}}-{{slug}}"
-        fields:
-          - {label: "Title", name: "title", widget: "string"}
-          - {label: "Publish Date", name: "date", widget: "datetime"}
-          - {label: "Summary", name: "summary", widget: "text", required: false}
-          - {label: "Tags", name: "tags", widget: "list", required: false}
-          - {label: "Body", name: "body", widget: "markdown"}
-      - name: "publications"
-        label: "Publications"
-        folder: "content/publication/"
-        create: true
-        fields:
-          - {label: "Title", name: "title", widget: "string"}
-          - {label: "Authors", name: "authors", widget: "list"}
-          - {label: "Date", name: "date", widget: "datetime"}
-          - {label: "Publication Venue", name: "publication", widget: "string", required: false}
-          - {label: "Abstract", name: "abstract", widget: "markdown", required: false}
-          - {label: "URL to PDF", name: "url_pdf", widget: "string", required: false}
-          - {label: "URL to Code", name: "url_code", widget: "string", required: false}
+  # COLLECTION 3: Blog Posts. This is now a top-level item.
+  - name: "posts"
+    label: "Blog Posts"
+    folder: "content/post/"
+    create: true
+    slug: "{{year}}-{{month}}-{{day}}-{{slug}}"
+    fields:
+      - {label: "Title", name: "title", widget: "string"}
+      - {label: "Publish Date", name: "date", widget: "datetime"}
+      - {label: "Summary", name: "summary", widget: "text", required: false}
+      - {label: "Tags", name: "tags", widget: "list", required: false}
+      - {label: "Body", name: "body", widget: "markdown"}
 
-  # COLLECTION 4: General site-wide settings.
+  # COLLECTION 4: Publications. This is also a top-level item.
+  - name: "publications"
+    label: "Publications"
+    folder: "content/publication/"
+    create: true
+    fields:
+      - {label: "Title", name: "title", widget: "string"}
+      - {label: "Authors", name: "authors", widget: "list"}
+      - {label: "Date", name: "date", widget: "datetime"}
+      - {label: "Publication Venue", name: "publication", widget: "string", required: false}
+      - {label: "Abstract", name: "abstract", widget: "markdown", required: false}
+      - {label: "URL to PDF", name: "url_pdf", widget: "string", required: false}
+      - {label: "URL to Code", name: "url_code", widget: "string", required: false}
+
+  # COLLECTION 5: General site-wide settings.
   - name: "settings"
     label: "Site Configuration"
-    collapsed: true
     files:
       - file: "config/_default/menus.yaml"
         label: "Navigation Menu"
