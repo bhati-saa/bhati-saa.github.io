@@ -58,9 +58,3 @@ features:
     enable: false
   privacy_pack:
     enable: false
-
-cms:
-  decap_cms:
-    # Give your site a name in the CMS interface
-    site_domain: bhati-saa.github.io
-  branch: main # or master
