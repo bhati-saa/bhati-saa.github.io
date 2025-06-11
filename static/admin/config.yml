@@ -1,36 +1,130 @@
-# This is the configuration for a Netlify environment using Netlify Identity and Git Gateway.
+# Backend configuration for Netlify Identity and Git Gateway
 backend:
-  name: git-gateway # Tells the CMS to use Netlify's Git Gateway service
-  branch: main # IMPORTANT: Change this to 'master' if that is your default branch
+  name: git-gateway
+  branch: main # IMPORTANT: Change to 'master' if your branch is named master
 
-# Where to store media files (images, PDFs) that you upload through the CMS.
-# The 'assets' folder is the modern standard for Hugo.
+# Media files will be stored in the 'assets' folder, which is the Hugo standard.
 media_folder: "assets/media/"
 public_folder: "/media/"
 
-# The collections are the heart of the CMS. Each collection represents a type of content.
+# The collections that define the editable content of your site.
 collections:
-  # COLLECTION 1: Site-wide settings and your main profile.
-  # This is a "File Collection", meaning it edits specific, single files.
-  - name: "settings"
-    label: "Site Settings & Profile"
+  # COLLECTION 1: Your main author profile. This is the most important section.
+  - name: "profile"
+    label: "My Profile"
     files:
-      # File 1.1: Your main user profile
       - file: "content/authors/admin/_index.md"
-        label: "My Profile"
-        name: "profile"
+        label: "Author Profile"
+        name: "author_profile"
         fields:
-          - {label: "Title (Your Name)", name: "title", widget: "string"}
           - {label: "Is this the main user?", name: "superuser", widget: "boolean", default: true}
-          - {label: "Role", name: "role", widget: "string"}
-          - {label: "Organizations", name: "organizations", widget: "list", fields: [{label: Name, name: name, widget: string}, {label: URL, name: url, widget: string}]}
-          - {label: "Short Biography", name: "bio", widget: "text"}
-          - {label: "Interests", name: "interests", widget: "list"}
-          - {label: "Education (Courses)", name: "education", widget: "object", fields: [{label: Courses, name: courses, widget: list, fields: [{label: Course Name, name: course, widget: string}, {label: Institution, name: institution, widget: string}, {label: Year, name: year, widget: number}]}]}
-          - {label: "Social Media & Other Links", name: "social", widget: "list", fields: [{label: Icon, name: icon, widget: string, hint: "E.g., 'envelope', 'twitter', 'github'. See Font Awesome docs."}, {label: Icon Pack, name: "icon_pack", widget: "string", hint: "E.g., 'fas', 'fab'"}, {label: Link, name: link, widget: string}]}
-          - {label: "Email for Contact Form", name: "email", widget: "string"}
+          - {label: "Your Name", name: "title", widget: "string"}
+          - {label: "Role / Job Title", name: "role", widget: "string", required: false}
+          - {label: "Organizations", name: "organizations", widget: "list", required: false, fields: [{label: Name, name: name, widget: string}, {label: URL, name: url, widget: string, required: false}]}
+          - {label: "Interests", name: "interests", widget: "list", required: false}
+          - label: "Education"
+            name: "education"
+            widget: "object"
+            fields:
+              - name: "courses"
+                label: "Degrees & Courses"
+                widget: "list"
+                required: false # This allows the list to be empty
+                fields:
+                  - {label: "Course / Degree", name: "course", widget: "string", required: false}
+                  - {label: "Institution", name: "institution", widget: "string", required: false}
+                  - {label: "Year", name: "year", widget: "number", required: false}
+          - {label: "Social Media & Other Links", name: "social", widget: "list", required: false, fields: [{label: Icon, name: icon, widget: string, hint: "E.g., 'envelope', 'twitter', 'github'. See Font Awesome docs."}, {label: Icon Pack, name: "icon_pack", widget: "string", hint: "E.g., 'fas', 'fab'"}, {label: Link, name: link, widget: string}]}
+          - {label: "Email for Contact Form", name: "email", widget: "string", required: false}
+          - {label: "Main Biography Content", name: "body", widget: "markdown", hint: "This is the main text that appears in your 'About Me' section."}
 
-      # File 1.2: The main navigation menu
+  # COLLECTION 2: The sections on your homepage.
+  - name: "home"
+    label: "Homepage Sections"
+    files:
+      - file: "content/home/about.md"
+        label: "About (Biography)"
+        name: "home_about"
+        fields:
+          - {label: "Enable this section?", name: "active", widget: "boolean", default: true}
+          - {label: "Order (Weight)", name: "weight", widget: "number", default: 10, hint: "Lower numbers appear higher on the page."}
+          - {label: "Title", name: "title", widget: "string", required: false, hint: "Leave blank to use default. This section displays your main profile."}
+      - file: "content/home/skills.md"
+        label: "Skills"
+        name: "home_skills"
+        fields:
+          - {label: "Enable this section?", name: "active", widget: "boolean", default: true}
+          - {label: "Order (Weight)", name: "weight", widget: "number", default: 20}
+          - {label: "Title", name: "title", widget: "string", default: "Skills"}
+          - {label: "Body (Content)", name: "body", widget: "markdown"}
+      - file: "content/home/experience.md"
+        label: "Experience"
+        name: "home_experience"
+        fields:
+          - {label: "Enable this section?", name: "active", widget: "boolean", default: true}
+          - {label: "Order (Weight)", name: "weight", widget: "number", default: 30}
+          - {label: "Title", name: "title", widget: "string", default: "Experience"}
+          - {label: "Body (Content)", name: "body", widget: "markdown"}
+      - file: "content/home/accomplishments.md"
+        label: "Accomplishments"
+        name: "home_accomplishments"
+        fields:
+          - {label: "Enable this section?", name: "active", widget: "boolean", default: true}
+          - {label: "Order (Weight)", name: "weight", widget: "number", default: 40}
+          - {label: "Title", name: "title", widget: "string", default: "Accomplishments"}
+          - {label: "Body (Content)", name: "body", widget: "markdown"}
+      - file: "content/home/posts.md"
+        label: "Recent Posts"
+        name: "home_posts"
+        fields:
+          - {label: "Enable this section?", name: "active", widget: "boolean", default: true}
+          - {label: "Order (Weight)", name: "weight", widget: "number", default: 50}
+          - {label: "Title", name: "title", widget: "string", default: "Recent Posts"}
+          - {label: "Subtitle", name: "subtitle", widget: "string", required: false}
+          - {label: "Number of posts to show", name: "count", widget: "number", default: 3}
+      - file: "content/home/contact.md"
+        label: "Contact"
+        name: "home_contact"
+        fields:
+          - {label: "Enable this section?", name: "active", widget: "boolean", default: true}
+          - {label: "Order (Weight)", name: "weight", widget: "number", default: 60}
+          - {label: "Title", name: "title", widget: "string", default: "Contact"}
+          - {label: "Body (Content)", name: "body", widget: "markdown"}
+
+  # COLLECTION 3: Content types you can create new entries for.
+  - name: "content_types"
+    label: "Content"
+    collapsed: false
+    collections:
+      - name: "posts"
+        label: "Blog Posts"
+        folder: "content/post/"
+        create: true
+        slug: "{{year}}-{{month}}-{{day}}-{{slug}}"
+        fields:
+          - {label: "Title", name: "title", widget: "string"}
+          - {label: "Publish Date", name: "date", widget: "datetime"}
+          - {label: "Summary", name: "summary", widget: "text", required: false}
+          - {label: "Tags", name: "tags", widget: "list", required: false}
+          - {label: "Body", name: "body", widget: "markdown"}
+      - name: "publications"
+        label: "Publications"
+        folder: "content/publication/"
+        create: true
+        fields:
+          - {label: "Title", name: "title", widget: "string"}
+          - {label: "Authors", name: "authors", widget: "list"}
+          - {label: "Date", name: "date", widget: "datetime"}
+          - {label: "Publication Venue", name: "publication", widget: "string", required: false}
+          - {label: "Abstract", name: "abstract", widget: "markdown", required: false}
+          - {label: "URL to PDF", name: "url_pdf", widget: "string", required: false}
+          - {label: "URL to Code", name: "url_code", widget: "string", required: false}
+
+  # COLLECTION 4: General site-wide settings.
+  - name: "settings"
+    label: "Site Configuration"
+    collapsed: true
+    files:
       - file: "config/_default/menus.yaml"
         label: "Navigation Menu"
         name: "menu"
@@ -42,120 +136,9 @@ collections:
               - {label: "Name", name: "name", widget: "string"}
               - {label: "URL", name: "url", widget: "string"}
               - {label: "Order (Weight)", name: "weight", widget: "number"}
-
-      # File 1.3: Theme-wide parameters
       - file: "config/_default/params.yaml"
         label: "Theme & Site Parameters"
         name: "params"
         fields:
           - {label: "Theme", name: "theme", widget: "select", options: ["minimal", "classic", "ocean", "forest", "dark", "mr-robot", "custom"]}
           - {label: "Font", name: "font", widget: "select", options: ["default", "classic", "rose", "ocean"]}
-          - {label: "Show 'Published with' footer?", name: "power_by", widget: "boolean", default: true}
-          - {label: "Show Copyright notice?", name: "copyright_license", widget: "object", fields: [{label: Enable?, name: enable, widget: boolean}, {label: License, name: license, widget: select, options: ["cc-by-sa-4.0", "cc-by-4.0", "cc-by-nd-4.0", "cc-by-nc-4.0", "cc-by-nc-nd-4.0", "cc-by-nc-sa-4.0"]}, {label: Notice, name: notice, widget: string, required: false}]}
-
-  # COLLECTION 2: The sections on your homepage.
-  # Also a "File Collection".
-  - name: "home"
-    label: "Homepage Sections"
-    files:
-      - file: "content/home/about.md"
-        label: "About Me (Biography)"
-        name: "about"
-        fields:
-          - {label: "Enable?", name: "active", widget: "boolean", default: true}
-          - {label: "Order (Weight)", name: "weight", widget: "number"}
-          - {label: "Title", name: "title", widget: "string"}
-          - {label: "Body", name: "body", widget: "markdown"}
-      - file: "content/home/skills.md"
-        label: "Skills"
-        name: "skills"
-        fields:
-          - {label: "Enable?", name: "active", widget: "boolean", default: true}
-          - {label: "Order (Weight)", name: "weight", widget: "number"}
-          - {label: "Title", name: "title", widget: "string"}
-          - {label: "Body", name: "body", widget: "markdown"}
-      - file: "content/home/experience.md"
-        label: "Experience"
-        name: "experience"
-        fields:
-          - {label: "Enable?", name: "active", widget: "boolean", default: true}
-          - {label: "Order (Weight)", name: "weight", widget: "number"}
-          - {label: "Title", name: "title", widget: "string"}
-          - {label: "Body", name: "body", widget: "markdown"}
-      - file: "content/home/accomplishments.md"
-        label: "Accomplishments"
-        name: "accomplishments"
-        fields:
-          - {label: "Enable?", name: "active", widget: "boolean", default: true}
-          - {label: "Order (Weight)", name: "weight", widget: "number"}
-          - {label: "Title", name: "title", widget: "string"}
-          - {label: "Body", name: "body", widget: "markdown"}
-      - file: "content/home/posts.md"
-        label: "Recent Posts"
-        name: "posts"
-        fields:
-          - {label: "Enable?", name: "active", widget: "boolean", default: true}
-          - {label: "Order (Weight)", name: "weight", widget: "number"}
-          - {label: "Title", name: "title", widget: "string"}
-          - {label: "Subtitle", name: "subtitle", widget: "string"}
-          - {label: "Body", name: "body", widget: "markdown"}
-      - file: "content/home/contact.md"
-        label: "Contact"
-        name: "contact"
-        fields:
-          - {label: "Enable?", name: "active", widget: "boolean", default: true}
-          - {label: "Order (Weight)", name: "weight", widget: "number"}
-          - {label: "Title", name: "title", widget: "string"}
-          - {label: "Body", name: "body", widget: "markdown"}
-
-  # COLLECTION 3: Blog Posts
-  # This is a "Folder Collection" where you can create new files.
-  - name: "posts"
-    label: "Blog Posts"
-    folder: "content/post/"
-    create: true
-    slug: "{{year}}-{{month}}-{{day}}-{{slug}}"
-    fields:
-      - {label: "Title", name: "title", widget: "string"}
-      - {label: "Publish Date", name: "date", widget: "datetime"}
-      - {label: "Authors", name: "authors", widget: "list", default: ["admin"]}
-      - {label: "Tags", name: "tags", widget: "list", required: false}
-      - {label: "Summary", name: "summary", widget: "text"}
-      - {label: "Featured Image", name: "image", widget: "image", required: false}
-      - {label: "Body", name: "body", widget: "markdown"}
-
-  # COLLECTION 4: Publications
-  - name: "publications"
-    label: "Publications"
-    folder: "content/publication/"
-    create: true
-    fields:
-      - {label: "Title", name: "title", widget: "string"}
-      - {label: "Authors", name: "authors", widget: "list"}
-      - {label: "Date", name: "date", widget: "datetime"}
-      - {label: "Publication Venue", name: "publication", widget: "string"}
-      - {label: "Publication Venue (Short)", name: "publication_short", widget: "string"}
-      - {label: "Abstract", name: "abstract", widget: "markdown"}
-      - {label: "Featured?", name: "featured", widget: "boolean", default: false}
-      - {label: "Featured Image", name: "image", widget: "image", required: false}
-      - {label: "URL to PDF", name: "url_pdf", widget: "string", required: false}
-      - {label: "URL to Code", name: "url_code", widget: "string", required: false}
-      - {label: "URL to Dataset", name: "url_dataset", widget: "string", required: false}
-      - {label: "URL to Project Page", name: "url_project", widget: "string", required: false}
-      - {label: "URL to Slides", name: "url_slides", widget: "string", required: false}
-      - {label: "URL to Video", name: "url_video", widget: "string", required: false}
-
-  # COLLECTION 5: Talks
-  - name: "talks"
-    label: "Talks & Events"
-    folder: "content/event/"
-    create: true
-    fields:
-      - {label: "Title", name: "title", widget: "string"}
-      - {label: "Date", name: "date", widget: "datetime"}
-      - {label: "Location", name: "location", widget: "string"}
-      - {label: "Summary", name: "summary", widget: "text"}
-      - {label: "Abstract", name: "abstract", widget: "markdown"}
-      - {label: "Featured Image", name: "image", widget: "image", required: false}
-      - {label: "URL to Slides", name: "url_slides", widget: "string", required: false}
-      - {label: "URL to Video", name: "url_video", widget: "string", required: false}
