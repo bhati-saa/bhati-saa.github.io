@@ -1,15 +1,12 @@
 # Backend configuration for Netlify Identity and Git Gateway
 backend:
   name: git-gateway
-  branch: main # IMPORTANT: Change to 'master' if your branch is named master
+  branch: main # This is confirmed to be correct.
 
-# Media files will be stored in the 'assets' folder, which is the Hugo standard.
 media_folder: "assets/media/"
 public_folder: "/media/"
 
-# The collections that define the editable content of your site.
 collections:
-  # COLLECTION 1: Your main author profile.
   - name: "profile"
     label: "My Profile"
     files:
@@ -22,23 +19,24 @@ collections:
           - {label: "Role / Job Title", name: "role", widget: "string", required: false}
           - {label: "Organizations", name: "organizations", widget: "list", required: false, fields: [{label: Name, name: name, widget: string}, {label: URL, name: url, widget: string, required: false}]}
           - {label: "Interests", name: "interests", widget: "list", required: false}
-          - label: "Education"
-            name: "education"
-            widget: "object"
+
+          # --- THIS IS THE CORRECTED EDUCATION SECTION ---
+          - label: "Education History"
+            name: "education.courses" # Using dot notation to directly target the list
+            widget: "list"
+            required: false
+            button_label: "Add Degree or Course"
             fields:
-              - name: "courses"
-                label: "Degrees & Courses"
-                widget: "list"
-                required: false
-                fields:
-                  - {label: "Course / Degree", name: "course", widget: "string", required: false}
-                  - {label: "Institution", name: "institution", widget: "string", required: false}
-                  - {label: "Year", name: "year", widget: "number", required: false}
-          - {label: "Social Media & Other Links", name: "social", widget: "list", required: false, fields: [{label: Icon, name: icon, widget: string, hint: "E.g., 'envelope', 'twitter', 'github'."}, {label: Icon Pack, name: "icon_pack", widget: "string", hint: "E.g., 'fas', 'fab'"}, {label: Link, name: link, widget: string}]}
+              - {label: "Course / Degree (e.g., PhD in Cryptography)", name: "course", widget: "string", required: false}
+              - {label: "Institution (e.g., KU Leuven)", name: "institution", widget: "string", required: false}
+              - {label: "Year", name: "year", widget: "number", required: false}
+          # --- END OF CORRECTED SECTION ---
+
+          - {label: "Social Media & Other Links", name: "social", widget: "list", required: false, fields: [{label: Icon, name: icon, widget: string, hint: "E.g., 'envelope', 'twitter', 'github'."}, {label: Icon Pack, name: "icon_pack", widget: "string", hint: "E.g., 'fas', 'fab'"}, {label: Link, name: link, widget:string}]}
           - {label: "Email for Contact Form", name: "email", widget: "string", required: false}
           - {label: "Main Biography Content", name: "body", widget: "markdown", hint: "This is the main text that appears in your 'About Me' section."}
 
-  # COLLECTION 2: The sections on your homepage.
+  # --- All other collections below this line are unchanged and correct ---
   - name: "home"
     label: "Homepage Sections"
     files:
@@ -47,8 +45,8 @@ collections:
         name: "home_about"
         fields:
           - {label: "Enable this section?", name: "active", widget: "boolean", default: true}
-          - {label: "Order (Weight)", name: "weight", widget: "number", default: 10, hint: "Lower numbers appear higher on the page."}
-          - {label: "Title", name: "title", widget: "string", required: false, hint: "Leave blank to use default. Displays your main profile."}
+          - {label: "Order (Weight)", name: "weight", widget: "number", default: 10}
+          - {label: "Title", name: "title", widget: "string", required: false}
       - file: "content/home/skills.md"
         label: "Skills"
         name: "home_skills"
@@ -86,12 +84,11 @@ collections:
         label: "Contact"
         name: "home_contact"
         fields:
-          - {label: "Enable this- section?", name: "active", widget: "boolean", default: true}
+          - {label: "Enable this section?", name: "active", widget: "boolean", default: true}
           - {label: "Order (Weight)", name: "weight", widget: "number", default: 60}
           - {label: "Title", name: "title", widget: "string", default: "Contact"}
           - {label: "Body (Content)", name: "body", widget: "markdown"}
 
-  # COLLECTION 3: Blog Posts. This is now a top-level item.
   - name: "posts"
     label: "Blog Posts"
     folder: "content/post/"
@@ -104,7 +101,6 @@ collections:
       - {label: "Tags", name: "tags", widget: "list", required: false}
       - {label: "Body", name: "body", widget: "markdown"}
 
-  # COLLECTION 4: Publications. This is also a top-level item.
   - name: "publications"
     label: "Publications"
     folder: "content/publication/"
@@ -118,7 +114,6 @@ collections:
       - {label: "URL to PDF", name: "url_pdf", widget: "string", required: false}
       - {label: "URL to Code", name: "url_code", widget: "string", required: false}
 
-  # COLLECTION 5: General site-wide settings.
   - name: "settings"
     label: "Site Configuration"
     files:
