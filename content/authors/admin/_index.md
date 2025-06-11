@@ -1,17 +1,17 @@
 ---
 # Display name
-title: 吳健雄
+title: अमित सिंह भाटी
 
 # Name pronunciation (optional)
-name_pronunciation: Chien Shiung Wu
+name_pronunciation: Amit Singh Bhati
 
 # Full name (for SEO)
-first_name: Shiung Wu
-last_name: Chien
+first_name: Amit Singh
+last_name: Bhati
 
 # Status emoji
 status:
-  icon: ☕️
+  icon: 😺
 
 # Is this the primary user of the site?
 superuser: true
@@ -20,92 +20,81 @@ superuser: true
 highlight_name: true
 
 # Role/position/tagline
-role: Chief Scientist
+role: Research Scientist
 
 # Organizations/Affiliations to display in Biography blox
 organizations:
-  - name: OpenAI
-    url: https://openai.com/
+  - name: 3MI Labs
+    url: https://www.3milabs.tech/
 
 # Social network links
 # Need to use another icon? Simply download the SVG icon to your `assets/media/icons/` folder.
 profiles:
   - icon: at-symbol
-    url: 'mailto:your-email@example.com'
+    url: 'mailto:amitsingh [dot] bhati [at] 3milabs [dot] tech'
     label: E-mail Me
   - icon: brands/x
-    url: https://twitter.com/GetResearchDev
-  - icon: brands/instagram
-    url: https://www.instagram.com/
-  - icon: brands/github
-    url: https://github.com/gcushen
+    url: https://x.com/kr_ams/
+    label: My X Handle
+  #- icon: brands/instagram
+  #  url: https://www.instagram.com/
+  #- icon: brands/github
+  #  url: https://github.com/gcushen
   - icon: brands/linkedin
-    url: https://www.linkedin.com/
+    url: https://www.linkedin.com/in/amit-singh-bhati-a06711a7/
+    label: My LinkedIn
   - icon: academicons/google-scholar
-    url: https://scholar.google.com/
+    url: https://scholar.google.com/citations?user=AodA_7YAAAAJ&amp;hl=en&amp;oi=ao
+    label: My GScholar Profile
   - icon: academicons/orcid
-    url: https://orcid.org/
+    url: https://orcid.org/0000-0003-0843-4885
+    label: My ORCID Profile
 
 interests:
-  - Artificial Intelligence
-  - Computational Linguistics
-  - Information Retrieval
+  - Provable Security
+  - Applied Cryptology
+  - Information Security
+  - Security Notions
+  - Symmetric-Key Cryptography
+  - Cryptographic Protocols
+  - Blockchain
+  - Combinatorics
 
 education:
-  - area: PhD Artificial Intelligence
-    institution: Stanford University
-    date_start: 2016-01-01
-    date_end: 2020-12-31
-    summary: |
-      Thesis on _Why LLMs are awesome_. Supervised by [Prof Joe Smith](https://example.com). Presented papers at 5 IEEE conferences with the contributions being published in 2 Springer journals.
-    button:
-      text: 'Read Thesis'
-      url: 'https://example.com'
-  - area: MEng Artificial Intelligence
-    institution: Massachusetts Institute of Technology
-    date_start: 2016-01-01
-    date_end: 2020-12-31
-    summary: |
-      GPA: 3.8/4.0
-
-      Courses included:
-      - lorem ipsum dolor sit amet, consectetur adipiscing elit
-      - lorem ipsum dolor sit amet, consectetur adipiscing elit
-      - lorem ipsum dolor sit amet, consectetur adipiscing elit
-  - area: BSc Artificial Intelligence
-    institution: Massachusetts Institute of Technology
-    date_start: 2016-01-01
-    date_end: 2020-12-31
-    summary: |
-      GPA: 3.4/4.0
-      
-      Courses included:
-      - lorem ipsum dolor sit amet, consectetur adipiscing elit
-      - lorem ipsum dolor sit amet, consectetur adipiscing elit
-      - lorem ipsum dolor sit amet, consectetur adipiscing elit
-work:
-  - position: Director of Cloud Infrastructure
-    company_name: GenCoin
-    company_url: ''
-    company_logo: ''
-    date_start: 2021-01-01
+  - area: PhD [Ongoing] Advanced Cryptography for Modern Data Security
+    institution: COSIC, KU Leuven, Belgium
+    date_start: 2020-01-01
     date_end: ''
-    summary: |2-
-      Responsibilities include:
-      - lorem ipsum dolor sit amet, consectetur adipiscing elit
-      - lorem ipsum dolor sit amet, consectetur adipiscing elit
-      - lorem ipsum dolor sit amet, consectetur adipiscing elit
-  - position: Backend Software Engineer
-    company_name: X
-    company_url: ''
-    company_logo: ''
-    date_start: 2016-01-01
-    date_end: 2020-12-31
     summary: |
-      Responsibilities include:
-      - Migrated infrastructure to a new data center
-      - lorem ipsum dolor sit amet, consectetur adipiscing elit
-      - lorem ipsum dolor sit amet, consectetur adipiscing elit
+      Thesis on _Why expanding primitives are awesome_. Supervised by [Prof Bart Preneel](https://www.esat.kuleuven.be/cosic/people/person/?u=u0003308) and [Prof Elena Andreeva](https://sites.google.com/view/elenaandreeva). Presented 8 papers at popular cryptography conferences with the contributions being published in 3 Springer LNCS, 2 ACM and 1 IACR's ToSC proceedings.
+    button:
+      text: 'Read Thesis [Stay Tuned]'
+      #url: 'https://example.com'
+  - area: Integrated BS-MS | Mathematics Major 
+Thesis title: .
+    institution: Indian Institute of Science Education and Research (IISER), Pune, India
+    date_start: 2014-08-01
+    date_end: 2019-06-01
+    summary: |
+      Bachelor and Master degrees in Science with specialization in Mathematics. Master's thesis in Mathemtical Cryptology, on how to design a Fully Resilient, Identity-based, Efficient, Non-interactive and Decentralized Key Exchange Protocol (FRIEND-KEP)
+
+     # Courses included:
+     # - lorem ipsum dolor sit amet, consectetur adipiscing elit
+     # - lorem ipsum dolor sit amet, consectetur adipiscing elit
+     # - lorem ipsum dolor sit amet, consectetur adipiscing elit
+work:
+  - position: Research Scientist
+    company_name: 3MI Labs, Belgium
+    company_url: 'https://www.3milabs.tech/'
+    company_logo: 'assets/media/icons/3mi.png'
+    date_start: 2024-04-01
+    date_end: ''
+    #summary: |2-
+    #  Responsibilities include:
+    # - lorem ipsum dolor sit amet, consectetur adipiscing elit
+    #  - lorem ipsum dolor sit amet, consectetur adipiscing elit
+    #  - lorem ipsum dolor sit amet, consectetur adipiscing elit
+
 
 # Skills
 # Add your own SVG icons to `assets/media/icons/`
@@ -183,4 +172,4 @@ awards:
 
 ## About Me
 
-Chien Shiung Wu is a professor of artificial intelligence at the Stanford AI Lab. Her research interests include distributed robotics, mobile computing and programmable matter. She leads the Robotic Neurobiology group, which develops self-reconfiguring robots, systems of self-organizing robots, and mobile sensor networks.
+Amit Singh Bhati, a Research Scientist at 3MI Labs Belgium, specializes in applied cryptology and provable security. His research includes the design and analysis of cryptographic primitives, including algebraic hash functions, authenticated encryption, enciphering schemes, MACs, PRFs, KDFs, and key exchange protocols. A core focus of his work is achieving strong provable security and enhanced efficiency, with applications spanning secure messaging, secure IoT, secure cloud computing, and Web3.
