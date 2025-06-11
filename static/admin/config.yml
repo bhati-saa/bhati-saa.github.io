@@ -1,0 +1,26 @@
+backend:
+  name: git-gateway
+  branch: main
+
+media_folder: "assets/media/"
+public_folder: "/media/"
+
+collections:
+  - name: "home"
+    label: "Homepage Sections"
+    files:
+      - file: "content/home/about.md"
+        label: "About Me (Biography)"
+        name: "about"
+        fields:
+          - {label: "Section Order (Weight)", name: "weight", widget: "number"}
+          - {label: "Title", name: "title", widget: "string"}
+          - {label: "Body", name: "body", widget: "markdown"}
+      - file: "content/home/experience.md"
+        label: "Experience"
+        name: "experience"
+        fields:
+          - {label: "Section Order (Weight)", name: "weight", widget: "number"}
+          - {label: "Title", name: "title", widget: "string"}
+          - {label: "Subtitle", name: "subtitle", widget: "string", required: false}
+          - {label: "Body", name: "body", widget: "markdown"}
